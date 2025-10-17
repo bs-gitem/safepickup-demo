@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SafePickup - Prototype (Option A)</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="data:,">
+  <meta name="theme-color" content="#0b1020">
+  <style>
+    :root{--bg:#0b1020;--panel:#121732;--text:#e9edff;--accent:#6c7bff;--ok:#41d695;--warn:#ffd166;--muted:#c3cdfd}
+    html,body{height:100%}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:radial-gradient(1200px 800px at 10% -10%,#2643ff22,transparent),radial-gradient(1000px 700px at 110% 0,#ff6bd922,transparent),var(--bg);color:var(--text)}
+    .wrap{max-width:1200px;margin:0 auto;padding:20px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+    h1{margin:0;font-size:24px}
+    .tag{background:#ffffff14;border:1px solid #ffffff22;padding:4px 10px;border-radius:999px;font-size:12px}
+    .panel{background:var(--panel);border:1px solid #ffffff22;border-radius:14px;padding:16px}
+    .grid{display:grid;gap:12px}
+    .g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    .g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+    @media (max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+    .btn{background:#ffffff10;border:1px solid #ffffff22;color:var(--text);border-radius:10px;padding:10px 12px;cursor:pointer}
+    .btn.primary{background:var(--accent)}
+    .btn.success{background:var(--ok);color:#04160d}
+    .btn.warn{background:var(--warn);color:#2a2200}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    input,select{background:#0b1020;color:var(--text);border:1px solid #ffffff33;border-radius:10px;padding:8px 10px}
+    .tabs{display:flex;gap:8px;margin:16px 0 8px;flex-wrap:wrap}
+    .tab{padding:10px 14px;border-radius:12px;background:#ffffff12;border:1px solid #ffffff1e;cursor:pointer}
+    .tab[aria-selected="true"]{background:var(--accent);color:#fff}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px;border-bottom:1px solid #ffffff18;text-align:left}
+    th{font-size:12px;color:#bcccff;letter-spacing:.02em}
+    .pill{padding:4px 10px;border-radius:999px;font-size:12px;border:1px solid #ffffff22;background:#ffffff10}
+    .pill.ok{background:#41d69522;border-color:#41d69566}
+    .pill.warn{background:#ffd16622;border-color:#ffd16666}
+    .qr{width:110px;height:110px;background:repeating-linear-gradient(45deg,#000 0 6px,#fff 6px 12px);border:6px solid #0b1020;border-radius:8px}
+    .card{background:#0b1020;border:1px solid #ffffff1a;border-radius:12px;padding:12px}
+    .muted{color:var(--muted);opacity:.9}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>SafePickup <span class="tag">Hands-free school pickup prototype</span></h1>
+        <div class="muted">Parent - Staff - Admin (static demo synced across tabs)</div>
+      </div>
+      <div class="row">
+        <button id="btnInstall" class="btn">Install app</button>
+        <button id="btnScript" class="btn">Start demo</button>
+      </div>
+    </header>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-tab="parent">Parent</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="staff">Staff</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="admin">Admin</button>
+    </nav>
+
+    <!-- Parent -->
+    <section class="panel" data-panel="parent">
+      <div class="grid g3">
+        <div class="card">
+          <h3 style="margin:6px 0">Today's Pickup</h3>
+          <div class="muted">Window: 2:45 - 3:10 PM   School: Fairview Elementary</div>
+          <div class="row" style="margin-top:10px">
+            <button class="btn primary" id="btnOnMyWay">On my way</button>
+            <button class="btn success" id="btnArrived">Parked (I've arrived)</button>
+            <button class="btn warn" id="btnLate">Running late</button>
+          </div>
+          <p class="card" style="margin-top:10px">Drive-safe note: use CarPlay/Android Auto or auto check-in. Do not interact with the screen while moving.</p>
+          <div class="grid g2" style="margin-top:10px">
+            <div>
+              <div class="muted">Queue position</div>
+              <div id="myPosition" style="font-size:32px;font-weight:700">--</div>
+              <div class="muted">Estimated call in <span id="myETA">--</span></div>
+            </div>
+            <div class="row" style="justify-content:flex-end">
+              <div class="qr" aria-label="Car Tag QR"></div>
+              <div>
+                <div class="muted">Car Tag</div>
+                <div id="tag" style="font-size:28px;font-weight:700">A-317</div>
+                <div class="muted">Plate: <b id="plate">9TZ 114</b>  Zone: <b id="zone">B</b></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h3 style="margin:6px 0">Students</h3>
+          <table>
+            <thead><tr><th>Name</th><th>Grade</th><th>Door</th><th>Status</th></tr></thead>
+            <tbody id="parentStudents"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin:6px 0">Authorized pickup</h3>
+          <div class="muted">Guardians on file (editable by school approval)</div>
+          <ul id="authList" style="padding-left:18px;margin-top:6px"></ul>
+          <div class="row" style="margin-top:8px">
+            <input id="newGuardian" placeholder="Add guardian email" aria-label="Add guardian">
+            <button class="btn" id="btnAddGuardian">Request add</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Staff -->
+    <section class="panel" data-panel="staff" hidden>
+      <div class="row" style="justify-content:space-between;margin-bottom:8px">
+        <input id="staffSearch" placeholder="Search name, grade, car-tag, plate..." style="flex:1">
+        <button class="btn" id="btnNextBatch">Call next batch</button>
+        <select id="batchZone"><option>Zone A</option><option selected>Zone B</option><option>Zone C</option></select>
+        <select id="batchSize"><option>3</option><option selected>5</option><option>8</option><option>10</option></select>
+      </div>
+      <div class="grid g2">
+        <div class="card">
+          <h3 style="margin:6px 0">Approaching Queue <span class="muted" id="qCount"></span></h3>
+          <table aria-label="approaching queue">
+            <thead>
+              <tr><th>#</th><th>Student</th><th>Guardian</th><th>Grade</th><th>Tag</th><th>Plate</th><th>ETA</th><th>Zone</th><th>Actions</th></tr>
+            </thead>
+            <tbody id="queueBody"></tbody>
+          </table>
+        </div>
+        <div class="card">
+          <h3 style="margin:6px 0">Exceptions</h3>
+          <div id="exceptions"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Admin -->
+    <section class="panel" data-panel="admin" hidden>
+      <div class="grid g2">
+        <div class="card">
+          <h3 style="margin:6px 0">Mode and Zones</h3>
+          <div class="row">
+            <label><input type="radio" name="mode" value="queue" checked> Live Queue</label>
+            <label><input type="radio" name="mode" value="slot"> Assigned Slots</label>
+            <label>Geofence:
+              <select id="geofence">
+                <option value="0.5">0.5 mi</option>
+                <option value="1" selected>1 mi</option>
+                <option value="2">2 mi</option>
+              </select>
+            </label>
+          </div>
+          <div class="row" style="margin-top:8px">
+            <button class="btn" id="btnSeed">Re-seed demo data</button>
+            <button class="btn" id="btnReset">Reset</button>
+          </div>
+          <p class="muted">Demo only. Data resets on refresh.</p>
+        </div>
+        <div class="card">
+          <h3 style="margin:6px 0">Metrics (simulated)</h3>
+          <div class="grid g3">
+            <div class="card"><div class="muted">Median Wait</div><div id="mWait" style="font-size:28px;font-weight:700">--</div></div>
+            <div class="card"><div class="muted">P95 Wait</div><div id="p95" style="font-size:28px;font-weight:700">--</div></div>
+            <div class="card"><div class="muted">Throughput/hr</div><div id="tph" style="font-size:28px;font-weight:700">--</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    // Register service worker (PWA wow factor)
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function(){
+        navigator.serviceWorker.register("./sw.js").catch(console.error);
+      });
+    }
+
+    // Install button for PWA
+    let deferredPrompt = null;
+    const installBtn = document.getElementById("btnInstall");
+    window.addEventListener("beforeinstallprompt", (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      installBtn.style.display = "inline-block";
+    });
+    installBtn.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = "none";
+    });
+
+    // Tabs
+    (function(){
+      var tabs = document.querySelectorAll(".tab");
+      for (var i = 0; i < tabs.length; i++) {
+        tabs[i].addEventListener("click", function(){
+          for (var j = 0; j < tabs.length; j++) { tabs[j].setAttribute("aria-selected", "false"); }
+          this.setAttribute("aria-selected", "true");
+          var name = this.getAttribute("data-tab");
+          var panels = document.querySelectorAll("section[data-panel]");
+          for (var k = 0; k < panels.length; k++) {
+            panels[k].hidden = (panels[k].getAttribute("data-panel") !== name);
+          }
+        });
+      }
+    })();
+
+    // BroadcastChannel sync (same-origin tabs only)
+    const ipc = ("BroadcastChannel" in window) ? new BroadcastChannel("safepickup-v1") : null;
+    function broadcast(type, payload){ if(ipc){ ipc.postMessage({type, payload, ts: Date.now()}); } handleEvent({type, payload}); }
+    if (ipc) {
+      ipc.onmessage = (e) => { if(e && e.data){ handleEvent(e.data); } };
+    }
+
+    // Demo data
+    var NAMES=["Ava","Liam","Mia","Noah","Emma","Lucas","Sophia","Ethan","Olivia","Mason","Isabella","Logan"];
+    var LASTS=["Smith","Johnson","Lee","Brown","Garcia","Davis","Miller","Wilson","Martinez","Clark"];
+    var PLATES=["9TZ 114","5JK 771","3QA 882","7MM 104","2RD 990","8PC 441"];
+    var GRADES=["K","1","2","3","4","5","6"];
+    var ZONES=["A","B","C"];
+    var queue=[]; var exceptions=[]; var myEntryId=null;
+
+    function seedData(n){
+      if(!n) n=18; queue=[]; exceptions=[];
+      for(var i=0;i<n;i++){
+        var student=NAMES[i%NAMES.length]+" "+LASTS[(i*2)%LASTS.length];
+        var grade=GRADES[i%GRADES.length];
+        var tag=String.fromCharCode(65+(i%3))+"-"+(200+i);
+        var plate=PLATES[i%PLATES.length];
+        var zone=ZONES[i%ZONES.length];
+        var eta=Math.max(2,Math.round((i+1)*1.2));
+        queue.push({id:String(i+1),pos:i+1,student:student,grade:grade,guardian:LASTS[i%LASTS.length]+" Family",tag:tag,plate:plate,eta:eta,zone:zone,status:"approaching"});
+      }
+      myEntryId=queue[4]?queue[4].id:queue[0].id;
+      updateParent(); renderQueue(); renderMetrics();
+    }
+
+    function updateParent(){
+      var me=null; for(var i=0;i<queue.length;i++){ if(queue[i].id===myEntryId){me=queue[i];break;} }
+      setText("myPosition", me?me.pos:"--");
+      setText("myETA", me?(me.eta+" min"):"--");
+      setText("tag", me?me.tag:"--");
+      setText("plate", me?me.plate:"--");
+      setText("zone", me?me.zone:"--");
+      var tbody=document.getElementById("parentStudents"); tbody.innerHTML="";
+      var rows=[{name:"Aiden Smith",grade:"K",door:"North",status:"Waiting"},{name:"Maya Smith",grade:"3",door:"West",status:"Classroom"}];
+      for(var r=0;r<rows.length;r++){
+        var tr=document.createElement("tr");
+        var pill=rows[r].status==="Waiting"?'<span class="pill ok">Waiting</span>':'<span class="pill warn">Classroom</span>';
+        tr.innerHTML="<td>"+rows[r].name+"</td><td>"+rows[r].grade+"</td><td>"+rows[r].door+"</td><td>"+pill+"</td>";
+        tbody.appendChild(tr);
+      }
+      var list=document.getElementById("authList"); list.innerHTML="";
+      var items=["Jordan Smith (primary)","Alex Smith (grandparent)","Priya Rao (neighbor - expires 10/31)"];
+      for(var a=0;a<items.length;a++){ var li=document.createElement("li"); li.textContent=items[a]; list.appendChild(li); }
+    }
+
+    function setText(id, txt){ var el=document.getElementById(id); if(el) el.textContent=txt; }
+
+    function renderQueue(){
+      setText("qCount","("+queue.length+" in line)");
+      var body=document.getElementById("queueBody");
+      var term=(document.getElementById("staffSearch").value||"").toLowerCase();
+      body.innerHTML="";
+      for(var i=0;i<queue.length && i<60;i++){
+        var row=queue[i];
+        if(term && (row.student+" "+row.guardian+" "+row.grade+" "+row.tag+" "+row.plate).toLowerCase().indexOf(term)===-1) continue;
+        var tr=document.createElement("tr");
+        tr.innerHTML="<td>"+row.pos+"</td><td>"+row.student+"</td><td>"+row.guardian+"</td><td>"+row.grade+"</td><td><b>"+row.tag+"</b></td><td>"+row.plate+"</td><td>"+row.eta+" min</td><td>Zone "+row.zone+"</td>"+
+          '<td class="row">'+
+          '<button class="btn" data-act="call">Call</button>'+
+          '<button class="btn" data-act="curb">At curb</button>'+
+          '<button class="btn" data-act="ex">Exception</button>'+
+          "</td>";
+        (function(row,tr){
+          tr.querySelector('[data-act="call"]').addEventListener("click",function(){ row.status="called"; row.eta=Math.max(1,row.eta-2); renderQueue(); });
+          tr.querySelector('[data-act="curb"]').addEventListener("click",function(){ row.status="atCurb"; row.eta=0; renderQueue(); });
+          tr.querySelector('[data-act="ex"]').addEventListener("click",function(){
+            exceptions.unshift({ts:new Date().toLocaleTimeString(),note:row.student+" - "+row.tag+" marked EXCEPTION"});
+            queue=queue.filter(function(q){return q.id!==row.id}); resetPositions(); renderQueue(); renderExceptions();
+          });
+        })(row,tr);
+        body.appendChild(tr);
+      }
+      renderExceptions();
+    }
+
+    function renderExceptions(){
+      var box=document.getElementById("exceptions"); box.innerHTML="";
+      for(var i=0;i<exceptions.length && i<8;i++){
+        var p=document.createElement("p"); p.className="pill warn"; p.textContent=exceptions[i].ts+" - "+exceptions[i].note; box.appendChild(p);
+      }
+    }
+
+    function resetPositions(){ for(var i=0;i<queue.length;i++){ queue[i].pos=i+1; } }
+
+    setInterval(function(){
+      for(var i=0;i<queue.length;i++){ if(queue[i].eta>0 && Math.random()<0.6) queue[i].eta -= 1; }
+      if(queue[0] && (queue[0].status==="called" || queue[0].status==="atCurb") && Math.random()<0.5){ queue.shift(); resetPositions(); }
+      if(Math.random()<0.05 && queue.length){
+        var idx=Math.floor(Math.random()*Math.min(queue.length,6));
+        exceptions.unshift({ts:new Date().toLocaleTimeString(),note:queue[idx].student+" - "+queue[idx].tag+" not at door"});
+        queue.splice(idx,1); resetPositions();
+      }
+      updateParent(); renderQueue(); renderMetrics();
+    },2000);
+
+    document.getElementById("btnOnMyWay").addEventListener("click",function(){ broadcast("on_my_way",{eta:12}); });
+    document.getElementById("btnArrived").addEventListener("click",function(){ broadcast("arrived",{}); });
+    document.getElementById("btnLate").addEventListener("click",function(){ broadcast("late",{eta:20}); });
+    document.getElementById("btnAddGuardian").addEventListener("click",function(){ var email=document.getElementById("newGuardian").value.trim(); if(!email) return; alert("Request sent to school to add "+email); document.getElementById("newGuardian").value=""; });
+
+    document.getElementById("staffSearch").addEventListener("input",renderQueue);
+    document.getElementById("btnNextBatch").addEventListener("click",function(){
+      var zoneValue = document.getElementById("batchZone").value || "Zone B";
+      var zone = (zoneValue.split(" ")[1] || "B");
+      var size = parseInt(document.getElementById("batchSize").value,10);
+      var called = 0;
+      for(var i=0;i<queue.length;i++){
+        if(queue[i].status==="approaching"){
+          queue[i].status="called"; queue[i].zone=zone; called++;
+          if(called>=size) break;
+        }
+      }
+      alert("Called next "+called+" cars to Zone "+zone+".");
+      renderQueue();
+    });
+
+    document.getElementById("btnScript").addEventListener("click", async function(){
+      broadcast("on_my_way",{eta:10});
+      await wait(1200);
+      broadcast("late",{eta:14});
+      await wait(1000);
+      broadcast("arrived",{});
+      await wait(1000);
+      document.getElementById("btnNextBatch").click();
+    });
+    function wait(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+    function handleEvent(msg){
+      if(!msg || !msg.type) return;
+      var meIdx = Math.min(queue.length-1, 4);
+      if(meIdx < 0) return;
+      var me = queue[meIdx];
+      if(msg.type === "on_my_way"){ me.eta = (msg.payload && msg.payload.eta) ? msg.payload.eta : 12; me.status="approaching"; }
+      if(msg.type === "late"){ me.eta = (msg.payload && msg.payload.eta) ? msg.payload.eta : me.eta+8; me.status="approaching"; }
+      if(msg.type === "arrived"){ me.eta = 0; me.status="atCurb"; }
+      updateParent(); renderQueue();
+    }
+
+    function renderMetrics(){
+      var len=Math.max(1,queue.length);
+      var midIndex=Math.floor(len/2);
+      var p95Index=Math.floor(len*0.95);
+      var median=queue[midIndex]?Math.round(queue[midIndex].eta):6;
+      var p95=queue[p95Index]?Math.round(queue[p95Index].eta):12;
+      setText("mWait", median+" min");
+      setText("p95", p95+" min");
+      setText("tph", String(Math.round(3600/((median*60/5)+1))));
+    }
+
+    seedData(18);
+  </script>
+</body>
+</html>
